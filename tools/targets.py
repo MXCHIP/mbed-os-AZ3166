@@ -540,6 +540,20 @@ class AZ3166Code(object):
         with open(binf.replace(".bin", ".ota.bin") ,'wb') as f:
         		f.write(appbin)
                 
+class AZ3166_EACode(object):
+    """Hooks for the TEENSY3.1"""
+    @staticmethod
+    def binary_hook(t_self, resources, elf, binf):
+        """Hook that is run after elf is generated"""
+        with open(binf,'rb') as f:
+                appbin = f.read()
+        with open('./mbed-os/targets/TARGET_MXCHIP/TARGET_AZ3166_EA/boot.bin', 'rb') as f:
+                bootbin = f.read()
+        with open(binf ,'wb') as f:
+        		f.write(bootbin+'\xFF'*(0xC000-len(bootbin))+appbin)
+        with open(binf.replace(".bin", ".ota.bin") ,'wb') as f:
+        		f.write(appbin)
+
 class AZ3239Code(object):
     """Hooks for the TEENSY3.1"""
     @staticmethod
