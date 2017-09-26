@@ -49,7 +49,7 @@ namespace mbed {
  * }
  * @endcode
  */
-class Serial : public SerialBase, public Stream {
+class MbedSerial : public SerialBase, public MbedStream {
 
 public:
 #if DEVICE_SERIAL_ASYNCH
@@ -67,7 +67,7 @@ public:
      *  @note
      *    Either tx or rx may be specified as NC if unused
      */
-    Serial(PinName tx, PinName rx, const char *name=NULL, int baud = MBED_CONF_PLATFORM_DEFAULT_SERIAL_BAUD_RATE);
+    MbedSerial(PinName tx, PinName rx, const char *name=NULL, int baud = MBED_CONF_PLATFORM_DEFAULT_SERIAL_BAUD_RATE);
 
 
     /** Create a Serial port, connected to the specified transmit and receive pins, with the specified baud
@@ -79,7 +79,7 @@ public:
      *  @note
      *    Either tx or rx may be specified as NC if unused
      */
-    Serial(PinName tx, PinName rx, int baud);
+    MbedSerial(PinName tx, PinName rx, int baud);
 
 protected:
     virtual int _getc();

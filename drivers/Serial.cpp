@@ -20,27 +20,27 @@
 
 namespace mbed {
 
-Serial::Serial(PinName tx, PinName rx, const char *name, int baud) : SerialBase(tx, rx, baud), Stream(name) {
+MbedSerial::MbedSerial(PinName tx, PinName rx, const char *name, int baud) : SerialBase(tx, rx, baud), MbedStream(name) {
 }
 
-Serial::Serial(PinName tx, PinName rx, int baud): SerialBase(tx, rx, baud), Stream(NULL) {
+MbedSerial::MbedSerial(PinName tx, PinName rx, int baud): SerialBase(tx, rx, baud), MbedStream(NULL) {
 }
 
-int Serial::_getc() {
+int MbedSerial::_getc() {
     // Mutex is already held
     return _base_getc();
 }
 
-int Serial::_putc(int c) {
+int MbedSerial::_putc(int c) {
     // Mutex is already held
     return _base_putc(c);
 }
 
-void Serial::lock() {
+void MbedSerial::lock() {
     _mutex.lock();
 }
 
-void Serial::unlock() {
+void MbedSerial::unlock() {
     _mutex.unlock();
 }
 

@@ -1,0 +1,3 @@
+{
+    "macros": [ "MBEDTLS_USER_CONFIG_FILE=\"mbedtls_entropy_config.h\"","MBEDTLS_SHA1_C", "MBEDTLS_MD5_C", "MBEDTLS_SSL_PROTO_TLS1_1"  ]
+}

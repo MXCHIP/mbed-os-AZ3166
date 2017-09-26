@@ -21,10 +21,10 @@
 namespace mbed {
 
 #if DEVICE_SPI_ASYNCH && TRANSACTION_QUEUE_SIZE_SPI
-CircularBuffer<Transaction<SPI>, TRANSACTION_QUEUE_SIZE_SPI> SPI::_transaction_buffer;
+CircularBuffer<Transaction<MbedSPI>, TRANSACTION_QUEUE_SIZE_SPI> MbedSPI::_transaction_buffer;
 #endif
 
-SPI::SPI(PinName mosi, PinName miso, PinName sclk, PinName ssel) :
+MbedSPI::MbedSPI(PinName mosi, PinName miso, PinName sclk, PinName ssel) :
         _spi(),
 #if DEVICE_SPI_ASYNCH
         _irq(this),
@@ -39,28 +39,28 @@ SPI::SPI(PinName mosi, PinName miso, PinName sclk, PinName ssel) :
     aquire();
 }
 
-void SPI::format(int bits, int mode) {
+void MbedSPI::format(int bits, int mode) {
     lock();
     _bits = bits;
     _mode = mode;
-    SPI::_owner = NULL; // Not that elegant, but works. rmeyer
+    MbedSPI::_owner = NULL; // Not that elegant, but works. rmeyer
     aquire();
     unlock();
 }
 
-void SPI::frequency(int hz) {
+void MbedSPI::frequency(int hz) {
     lock();
     _hz = hz;
-    SPI::_owner = NULL; // Not that elegant, but works. rmeyer
+    MbedSPI::_owner = NULL; // Not that elegant, but works. rmeyer
     aquire();
     unlock();
 }
 
-SPI* SPI::_owner = NULL;
-SingletonPtr<PlatformMutex> SPI::_mutex;
+MbedSPI* MbedSPI::_owner = NULL;
+SingletonPtr<PlatformMutex> MbedSPI::_mutex;
 
 // ignore the fact there are multiple physical spis, and always update if it wasnt us last
-void SPI::aquire() {
+void MbedSPI::aquire() {
     lock();
      if (_owner != this) {
         spi_format(&_spi, _bits, _mode, 0);
@@ -70,7 +70,7 @@ void SPI::aquire() {
     unlock();
 }
 
-int SPI::write(int value) {
+int MbedSPI::write(int value) {
     lock();
     aquire();
     int ret = spi_master_write(&_spi, value);
@@ -78,17 +78,17 @@ int SPI::write(int value) {
     return ret;
 }
 
-void SPI::lock() {
+void MbedSPI::lock() {
     _mutex->lock();
 }
 
-void SPI::unlock() {
+void MbedSPI::unlock() {
     _mutex->unlock();
 }
 
 #if DEVICE_SPI_ASYNCH
 
-int SPI::transfer(const void *tx_buffer, int tx_length, void *rx_buffer, int rx_length, unsigned char bit_width, const event_callback_t& callback, int event)
+int MbedSPI::transfer(const void *tx_buffer, int tx_length, void *rx_buffer, int rx_length, unsigned char bit_width, const event_callback_t& callback, int event)
 {
     if (spi_active(&_spi)) {
         return queue_transfer(tx_buffer, tx_length, rx_buffer, rx_length, bit_width, callback, event);
@@ -97,7 +97,7 @@ int SPI::transfer(const void *tx_buffer, int tx_length, void *rx_buffer, int rx_
     return 0;
 }
 
-void SPI::abort_transfer()
+void MbedSPI::abort_transfer()
 {
     spi_abort_asynch(&_spi);
 #if TRANSACTION_QUEUE_SIZE_SPI
@@ -106,20 +106,20 @@ void SPI::abort_transfer()
 }
 
 
-void SPI::clear_transfer_buffer()
+void MbedSPI::clear_transfer_buffer()
 {
 #if TRANSACTION_QUEUE_SIZE_SPI
     _transaction_buffer.reset();
 #endif
 }
 
-void SPI::abort_all_transfers()
+void MbedSPI::abort_all_transfers()
 {
     clear_transfer_buffer();
     abort_transfer();
 }
 
-int SPI::set_dma_usage(DMAUsage usage)
+int MbedSPI::set_dma_usage(DMAUsage usage)
 {
     if (spi_active(&_spi)) {
         return -1;
@@ -128,7 +128,7 @@ int SPI::set_dma_usage(DMAUsage usage)
     return  0;
 }
 
-int SPI::queue_transfer(const void *tx_buffer, int tx_length, void *rx_buffer, int rx_length, unsigned char bit_width, const event_callback_t& callback, int event)
+int MbedSPI::queue_transfer(const void *tx_buffer, int tx_length, void *rx_buffer, int rx_length, unsigned char bit_width, const event_callback_t& callback, int event)
 {
 #if TRANSACTION_QUEUE_SIZE_SPI
     transaction_t t;
@@ -140,7 +140,7 @@ int SPI::queue_transfer(const void *tx_buffer, int tx_length, void *rx_buffer, i
     t.event = event;
     t.callback = callback;
     t.width = bit_width;
-    Transaction<SPI> transaction(this, t);
+    Transaction<MbedSPI> transaction(this, t);
     if (_transaction_buffer.full()) {
         return -1; // the buffer is full
     } else {
@@ -157,26 +157,26 @@ int SPI::queue_transfer(const void *tx_buffer, int tx_length, void *rx_buffer, i
 #endif
 }
 
-void SPI::start_transfer(const void *tx_buffer, int tx_length, void *rx_buffer, int rx_length, unsigned char bit_width, const event_callback_t& callback, int event)
+void MbedSPI::start_transfer(const void *tx_buffer, int tx_length, void *rx_buffer, int rx_length, unsigned char bit_width, const event_callback_t& callback, int event)
 {
     aquire();
     _callback = callback;
-    _irq.callback(&SPI::irq_handler_asynch);
+    _irq.callback(&MbedSPI::irq_handler_asynch);
     spi_master_transfer(&_spi, tx_buffer, tx_length, rx_buffer, rx_length, bit_width, _irq.entry(), event , _usage);
 }
 
 #if TRANSACTION_QUEUE_SIZE_SPI
 
-void SPI::start_transaction(transaction_t *data)
+void MbedSPI::start_transaction(transaction_t *data)
 {
     start_transfer(data->tx_buffer, data->tx_length, data->rx_buffer, data->rx_length, data->width, data->callback, data->event);
 }
 
-void SPI::dequeue_transaction()
+void MbedSPI::dequeue_transaction()
 {
-    Transaction<SPI> t;
+    Transaction<MbedSPI> t;
     if (_transaction_buffer.pop(t)) {
-        SPI* obj = t.get_object();
+        MbedSPI* obj = t.get_object();
         transaction_t* data = t.get_transaction();
         obj->start_transaction(data);
     }
@@ -184,7 +184,7 @@ void SPI::dequeue_transaction()
 
 #endif
 
-void SPI::irq_handler_asynch(void)
+void MbedSPI::irq_handler_asynch(void)
 {
     int event = spi_irq_handler_asynch(&_spi);
     if (_callback && (event & SPI_EVENT_ALL)) {
